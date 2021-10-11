@@ -106,6 +106,7 @@ fi
 
 function print_params() {
   # Print params and write to file so that they are kept alongside the results
+  local host=`hostname -s`
   local policy=`chrt -p $$`
   local params="\
 Params: ${experiment_dir}
@@ -117,6 +118,7 @@ perf_test comm  = ${c_comm}
 is_realtime     = ${c_is_realtime}
 base path       = ${base_path}
 cmd             = $0 $*
+host            = ${host}
 as_root         = ${as_root}
 policy          = ${policy}
 "
