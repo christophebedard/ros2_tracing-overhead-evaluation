@@ -33,14 +33,14 @@ declare -a c_freqs=("100" "500" "1000" "2000")
 declare -a c_msgs=("1" "32" "64" "256")
 # declare -a c_freqs=("500")
 # declare -a c_msgs=("256")
-# c_max_runtime=1205
-c_max_runtime=15
+c_max_runtime=1205
+# c_max_runtime=15
 c_ignore=5
 c_comm="rclcpp-single-threaded-executor"
 c_params_file="experiment_params.log"
 
-# c_is_realtime=1
-c_is_realtime=0
+c_is_realtime=1
+# c_is_realtime=0
 # # Use 3rd and 4th CPUs
 # cpu_0=2
 # cpu_1=3
@@ -109,8 +109,8 @@ function print_params() {
   local policy=`chrt -p $$`
   local params="\
 Params: ${experiment_dir}
-frequencies     = ${c_freqs}
-messages        = ${c_msgs}
+frequencies     = ${c_freqs[@]}
+messages        = ${c_msgs[@]}
 max_runtime     = ${c_max_runtime}
 ignore          = ${c_ignore}
 perf_test comm  = ${c_comm}
@@ -133,12 +133,13 @@ function run() {
   local freq=$3
   local do_trace=$4
   local perf_test_path=$5
+
   local msg_name="Array${msg}k"
   local logfile_name="${exp_name}_${msg_name}_${freq}hz"
   local logfile_name_pub="${logfile_name}_p"
   local logfile_name_sub="${logfile_name}_s"
 
-  echo "${logfile_name}"
+  echo "log: ${logfile_name}"
 
   local session_name="${logfile_name}"
   if [[ "$do_trace" -eq 1 ]]; then
@@ -167,9 +168,12 @@ function run() {
   fi
 }
 
-function run_exp() {
+function run_single_exp() {
   local exp_num=$1
   local mode=$2
+  local msg=$3
+  local freq=$4
+
   local exp_name="${exp_num}-${mode}"
 
   local ws_path=""
@@ -194,16 +198,25 @@ function run_exp() {
     exit 1
   fi
 
+  run ${exp_name} ${msg} ${freq} ${do_trace} ${perf_test_path}
+
+  echo
+}
+
+function run_full_exp() {
+  local exp_num=$1
+
   for m in "${c_msgs[@]}"
   do
     for f in "${c_freqs[@]}"
     do
-      run ${exp_name} ${m} ${f} ${do_trace} ${perf_test_path}
+      echo "msg=${m}, freq=${f}"
+      echo
+      run_single_exp ${exp_num} "base" ${m} ${f}
+      run_single_exp ${exp_num} "trace" ${m} ${f}
       echo
     done
   done
-
-  echo
 }
 
 mkdir ${experiment_dir}
@@ -211,5 +224,4 @@ cd ${experiment_dir}
 
 print_params
 
-run_exp 1 "base"
-run_exp 1 "trace"
+run_full_exp 1
