@@ -19,6 +19,7 @@
     ```sh
     ./run_experiment.sh
     ```
+    * in general, results are better if the experiment is run right after a system reboot
 1. Plot results by providing name of directory containing the experiment data using [`plot_experiment.py`](./plot_experiment.py)
     * make sure the `freqs` and `msgs` arrays match the ones defined in `run_experiment.sh`
     ```sh
