@@ -58,8 +58,11 @@ if [ "$EUID" -eq 0 ]; then
   as_root=1
 fi
 
+# Perform RT status/config checks
 rt_run_options_p=""
 rt_run_options_s=""
+rmem_default="$(sysctl net.core.rmem_default -n)"
+rmem_max="$(sysctl net.core.rmem_max -n)"
 if [ ${c_is_realtime} -eq 1 ]; then
   # Make sure SMT is disabled
   smt_active=$(cat /sys/devices/system/cpu/smt/active)
@@ -81,6 +84,18 @@ if [ ${c_is_realtime} -eq 1 ]; then
   #   echo "    sudo update-grub && sudo reboot -h now"
   #   exit 1
   # fi
+
+  # Make sure the UDP socket buffer size was increased
+  if [ "${rmem_default}" -lt "67108864" ] || [ "${rmem_max}" -lt "67108864" ]; then
+    echo "Please increase UDP socket buffer size"
+    echo "  By running:"
+    echo "    sudo sysctl -w net.core.rmem_max=67108864"
+    echo "    sudo sysctl -w net.core.rmem_default=67108864"
+    echo "  Or by adding these lines to your /etc/sysctl.conf file and then rebooting:"
+    echo "    net.core.rmem_max=67108864"
+    echo "    net.core.rmem_default=67108864"
+    exit 1
+  fi
 
   # Make sure the script is run as root
   if [ ${as_root} -ne 1 ]; then
@@ -121,6 +136,8 @@ cmd             = $0 $*
 host            = ${host}
 as_root         = ${as_root}
 policy          = ${policy}
+rmem_default    = ${rmem_default}
+rmem_max        = ${rmem_max}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}

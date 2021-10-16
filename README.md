@@ -6,6 +6,26 @@
 
 1. Setup real-time system
     * or set `c_is_realtime` to `0` in `run_experiment.sh`
+    * increase UDP socket buffers from 25 MB (default) to 64 MB
+        * by running:
+        ```sh
+        sudo sysctl -w net.core.rmem_max=67108864
+        sudo sysctl -w net.core.rmem_default=67108864
+        ```
+        * or by adding these lines to your `/etc/sysctl.conf` file and then rebooting:
+        ```sh
+        net.core.rmem_max=67108864
+        net.core.rmem_default=67108864
+        ```
+    * disable SMT
+        * by adding `nosmt` to `GRUB_CMDLINE_LINUX` in /etc/default/grub, then running:
+        ```sh
+        sudo update-grub && sudo reboot -h now
+        ```
+        * or by running:
+        ```sh
+        sudo bash -c 'echo off > /sys/devices/system/cpu/smt/control'
+        ```
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
     * https://gitlab.com/ros-tracing/ros2_tracing
