@@ -50,9 +50,19 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 base_path="${SCRIPT_DIR}"
 base_ws="${base_path}/base_ws"
 tracing_ws="${base_path}/tracing_ws"
+cyclonedds_config_file="$PWD/cyclonedds.xml"
 timestamp=`date +%Y%m%dT%H%M%S%z`
 experiment_dir="exp-${timestamp}"
 
+
+# Make sure the Cyclone DDS config exists and then set environment variable
+if [ ! -f ${cyclonedds_config_file} ]; then
+  echo "Cyclone DDS config file not found: ${cyclonedds_config_file}"
+  exit 1
+fi
+export CYCLONEDDS_URI=file://${cyclonedds_config_file}
+
+# Get root status
 as_root=0
 if [ "$EUID" -eq 0 ]; then
   as_root=1
@@ -132,6 +142,7 @@ ignore          = ${c_ignore}
 perf_test comm  = ${c_comm}
 is_realtime     = ${c_is_realtime}
 base path       = ${base_path}
+cyclonedds_uri  = ${CYCLONEDDS_URI}
 cmd             = $0 $*
 host            = ${host}
 as_root         = ${as_root}
@@ -144,6 +155,8 @@ rmem_max        = ${rmem_max}
   echo ""
   # Also include exact repo hashes
   echo "$(cd ${base_ws} && vcs export src/ --exact)" >> ${c_params_file}
+  # Also include Cyclone DDS config file
+  echo "$(cat ${cyclonedds_config_file})" >> ${c_params_file}
 }
 
 function run() {
