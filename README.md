@@ -30,6 +30,10 @@
         ```sh
         sudo systemctl disable ondemand
         ```
+    * set scaling governor to `performance`
+        ```sh
+        echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+        ```
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
     * https://gitlab.com/ros-tracing/ros2_tracing

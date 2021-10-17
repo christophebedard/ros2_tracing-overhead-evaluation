@@ -74,6 +74,7 @@ rt_run_options_s=""
 rmem_default="$(sysctl net.core.rmem_default -n)"
 rmem_max="$(sysctl net.core.rmem_max -n)"
 ondemand="$(systemctl is-enabled ondemand)"
+governor="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
 if [ ${c_is_realtime} -eq 1 ]; then
   # Make sure SMT is disabled
   smt_active=$(cat /sys/devices/system/cpu/smt/active)
@@ -113,6 +114,14 @@ if [ ${c_is_realtime} -eq 1 ]; then
     echo "ondemand performance governor enabled"
     echo "  Disable by running:"
     echo "    sudo systemctl disable ondemand"
+    exit 1
+  fi
+
+  # Make sure the performance governor is used
+  if [[ "${governor}" != "performance" ]]; then
+    echo "Scaling governor not set to performance"
+    echo "  Set by running:"
+    echo "    echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null"
     exit 1
   fi
 
@@ -159,6 +168,7 @@ policy          = ${policy}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
+governor        = ${governor}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}
