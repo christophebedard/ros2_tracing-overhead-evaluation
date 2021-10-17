@@ -4,8 +4,11 @@
 
 ## Experiment
 
-1. Setup and tune real-time system
-    * or set `c_is_realtime` to `0` in `run_experiment.sh`
+1. Set up and tune real-time system
+    * (or set `c_is_realtime` to `0` in `run_experiment.sh`)
+    * to build & set up a real-time kernel, see:
+        * https://stackoverflow.com/a/51709420
+        * https://github.com/ros-realtime/rt-kernel-docker-builder
     * increase UDP socket buffers from 25 MB (default) to 64 MB
         * by running:
         ```sh
@@ -62,3 +65,21 @@
     ```sh
     python3 plot_experiment.py exp-YYYYMMDDTHHMMSS-ABCD
     ```
+
+## Useful commands
+
+* For running experiments on a separate real-time system
+    * Change ownership of directories/file from `root` to user
+        ```sh
+        sudo chown -R $USER:$USER exp-*
+        ```
+    * Copy experiment directories from remote to local
+        ```sh
+        scp -P $PORT -r $USER@server:/home/$USER/ros2_tracing_paper_experiment/exp-* .
+        ```
+
+## References
+
+* tuning UDP buffer size and Cyclone DDS
+    * https://github.com/ros2/rmw_cyclonedds/issues/346#issuecomment-944346030
+    * https://discourse.ros.org/t/ros2-speed/20162/21
