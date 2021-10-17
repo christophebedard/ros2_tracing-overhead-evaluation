@@ -26,6 +26,10 @@
         ```sh
         sudo bash -c 'echo off > /sys/devices/system/cpu/smt/control'
         ```
+    * disable performance governor
+        ```sh
+        sudo systemctl disable ondemand
+        ```
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
     * https://gitlab.com/ros-tracing/ros2_tracing

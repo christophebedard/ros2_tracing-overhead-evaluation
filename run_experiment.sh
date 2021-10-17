@@ -73,6 +73,7 @@ rt_run_options_p=""
 rt_run_options_s=""
 rmem_default="$(sysctl net.core.rmem_default -n)"
 rmem_max="$(sysctl net.core.rmem_max -n)"
+ondemand="$(systemctl is-enabled ondemand)"
 if [ ${c_is_realtime} -eq 1 ]; then
   # Make sure SMT is disabled
   smt_active=$(cat /sys/devices/system/cpu/smt/active)
@@ -104,6 +105,14 @@ if [ ${c_is_realtime} -eq 1 ]; then
     echo "  Or by adding these lines to your /etc/sysctl.conf file and then rebooting:"
     echo "    net.core.rmem_max=67108864"
     echo "    net.core.rmem_default=67108864"
+    exit 1
+  fi
+
+  # Make sure the ondemand performance governor is disabled
+  if [[ "${ondemand}" == "enabled" ]]; then
+    echo "ondemand performance governor enabled"
+    echo "  Disable by running:"
+    echo "    sudo systemctl disable ondemand"
     exit 1
   fi
 
@@ -149,6 +158,7 @@ as_root         = ${as_root}
 policy          = ${policy}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
+ondemand        = ${ondemand}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}
