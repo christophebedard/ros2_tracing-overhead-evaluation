@@ -4,7 +4,7 @@
 
 ## Experiment
 
-1. Setup real-time system
+1. Setup and tune real-time system
     * or set `c_is_realtime` to `0` in `run_experiment.sh`
     * increase UDP socket buffers from 25 MB (default) to 64 MB
         * by running:
@@ -33,6 +33,15 @@
     * set scaling governor to `performance`
         ```sh
         echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+        ```
+    * set constant CPU frequency by setting min frequency to max frequency
+        * get max CPU frequency by running:
+        ```sh
+        cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq
+        ```
+        * then set set min CPU frequency to that value by running:
+        ```sh
+        echo $MAX_FREQ | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null
         ```
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
