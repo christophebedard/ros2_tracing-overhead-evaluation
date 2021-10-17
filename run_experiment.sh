@@ -89,7 +89,9 @@ if [ ${c_is_realtime} -eq 1 ]; then
     exit 1
   fi
 
-  # # Make sure CPUs are correctly isolated
+  # Make sure CPUs are correctly isolated
+  # Note: currently skipping this step, since the benchmark has many threads
+  #       and isolating+pinning CPUs leads to bad performance
   # isolated_cpus=$(cat /sys/devices/system/cpu/isolated)
   # # This file uses a dash between the consecutive CPU numbers even if we used a comma in the grub config
   # if [[ "$isolated_cpus" != "$cpu_0-$cpu_1" ]]; then
@@ -123,7 +125,7 @@ if [ ${c_is_realtime} -eq 1 ]; then
   if [[ "${governor}" != "performance" ]]; then
     echo "Scaling governor not set to performance"
     echo "  Set by running:"
-    echo "    echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null"
+    echo "    echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null"
     exit 1
   fi
 
@@ -133,7 +135,7 @@ if [ ${c_is_realtime} -eq 1 ]; then
     echo "  Get max CPU frequency by running:"
     echo "    cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq"
     echo "  Set min CPU frequency to that value by running:"
-    echo "    echo \$MAX_FREQ | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null"
+    echo "    echo \$MAX_FREQ | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null"
     exit 1
   fi
 

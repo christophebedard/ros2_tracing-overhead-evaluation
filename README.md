@@ -32,7 +32,7 @@
         ```
     * set scaling governor to `performance`
         ```sh
-        echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+        echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
         ```
     * set constant CPU frequency by setting min frequency to max frequency
         * get max CPU frequency by running:
@@ -41,7 +41,7 @@
         ```
         * then set set min CPU frequency to that value by running:
         ```sh
-        echo $MAX_FREQ | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null
+        echo $MAX_FREQ | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null
         ```
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
