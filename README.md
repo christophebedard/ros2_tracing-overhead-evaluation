@@ -1,6 +1,6 @@
-# `ros2_tracing` paper experiment
+# `ros2_tracing` overhead evaluation
 
-`ros2_tracing` latency overhead experiment.
+`ros2_tracing` latency overhead evaluation experiment.
 
 ## Experiment
 
