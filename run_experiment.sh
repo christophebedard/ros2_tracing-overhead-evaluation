@@ -37,6 +37,7 @@ c_max_runtime=1205
 # c_max_runtime=15
 c_ignore=5
 c_comm="rclcpp-single-threaded-executor"
+c_rmw_impl="rmw_cyclonedds_cpp"
 c_params_file="experiment_params.log"
 
 c_is_realtime=1
@@ -55,12 +56,15 @@ timestamp=`date +%Y%m%dT%H%M%S%z`
 experiment_dir="exp-${timestamp}"
 
 
-# Make sure the Cyclone DDS config exists and then set environment variable
-if [ ! -f ${cyclonedds_config_file} ]; then
-  echo "Cyclone DDS config file not found: ${cyclonedds_config_file}"
-  exit 1
+if [[ "${c_rmw_impl}" == "rmw_cyclonedds_cpp" ]]; then
+  # Make sure the Cyclone DDS config exists and then set environment variable
+  if [ ! -f ${cyclonedds_config_file} ]; then
+    echo "Cyclone DDS config file not found: ${cyclonedds_config_file}"
+    exit 1
+  fi
+  export CYCLONEDDS_URI=file://${cyclonedds_config_file}
 fi
-export CYCLONEDDS_URI=file://${cyclonedds_config_file}
+export RMW_IMPLEMENTATION="${c_rmw_impl}"
 
 # Get root status
 as_root=0
@@ -172,6 +176,7 @@ messages        = ${c_msgs[@]}
 max_runtime     = ${c_max_runtime}
 ignore          = ${c_ignore}
 perf_test comm  = ${c_comm}
+rmw_impl        = ${c_rmw_impl}
 is_realtime     = ${c_is_realtime}
 base path       = ${base_path}
 cyclonedds_uri  = ${CYCLONEDDS_URI}
