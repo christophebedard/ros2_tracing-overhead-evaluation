@@ -17,9 +17,11 @@
 
 import glob
 import json
+import math
 import sys
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # Install apex_performance_plotter:
 #   cd base_ws/src/performance_test/performance_test/helper_scripts/apex_performance_plotter
@@ -36,10 +38,10 @@ msgs = [1, 32, 64, 256]
 # freqs = [500]
 # msgs = [256]
 
-include_plot_title = False
+include_plot_title = True
 # If True, a special branch of performance_test must have been used: christophebedard/raw-data
 # Then we expect to be able to read the raw latency values
-use_raw_latency_data = True
+has_raw_latency_data = True
 
 
 experiment_dir = None
@@ -85,26 +87,18 @@ def get_experiment_runs() -> List[Tuple[int, int]]:
     return runs
 
 
-def compute_latency_mean(run_dataframe: pd.DataFrame) -> float:
-    # return run_dataframe['latency_mean (ms)'].mean()
-    # Weighted mean using number of received messages
-    received = run_dataframe['received']
-    latency_mean = run_dataframe['latency_mean (ms)']
-    return (received * latency_mean).sum() / received.sum()
-
-
-def compute_latency_mean_raw(run_dataframe: pd.DataFrame) -> float:
-    # Latencies are in seconds, so convert to milliseconds
-    return (1000 * run_dataframe['raw_latencies']).mean()
-
-
-def get_latency_mean(run_file: str) -> float:
-    if use_raw_latency_data:
-        raw_latencies = load_logfile_raw(run_file)
-        return compute_latency_mean_raw(raw_latencies)
-
-    _, dataframe = load_logfile(run_file)
-    return compute_latency_mean(dataframe)
+def get_latency_data(run_file: str) -> Union[float, Tuple[float, float, pd.Series]]:
+    if has_raw_latency_data:
+        dataframe = load_logfile_raw(run_file)
+        # Raw latencies are in seconds, so convert to milliseconds
+        raw_latencies = 1000 * dataframe['raw_latencies']
+        return raw_latencies.mean(), raw_latencies.std(), raw_latencies
+    else:
+        _, dataframe = load_logfile(run_file)
+        # Weighted mean using number of received messages because we don't have the raw data
+        received = dataframe['received']
+        latency_mean = dataframe['latency_mean (ms)']
+        return (received * latency_mean).sum() / received.sum()
 
 
 def plot_mode(mode: str) -> None:
@@ -113,15 +107,25 @@ def plot_mode(mode: str) -> None:
     legends = []
     for msg in msgs:
         msg_freqs = []
-        msg_latency_means = []
+        msg_latencies = []
+        msg_latencies_stdev = []
         for freq in freqs:
-            # print(f'{mode}: {msg}k, {freq} Hz')
             run_file = get_run_file(mode, msg, freq)
-            latency_mean = get_latency_mean(run_file)
-            # print(f'\t{latency_mean}')
+
+            latency_mean = None
+            if has_raw_latency_data:
+                latency_mean, latency_stdev, _ = get_latency_data(run_file)
+                msg_latencies_stdev.append(latency_stdev)
+            else:
+                latency_mean = get_latency_data(run_file)
+
+            msg_latencies.append(latency_mean)
             msg_freqs.append(freq)
-            msg_latency_means.append(latency_mean)
-        ax.plot(msg_freqs, msg_latency_means, 'D-')
+
+        if has_raw_latency_data:
+            ax.errorbar(msg_freqs, msg_latencies, yerr=msg_latencies_stdev, capsize=5, fmt='D-')
+        else:
+            ax.plot(msg_freqs, msg_latencies, 'D-')
         legends.append(f'{msg} KB')
 
     # xticks = {0}
@@ -147,24 +151,82 @@ def plot_mode(mode: str) -> None:
     fig.savefig(f'{filename}.svg')
 
 
-def plot_diff_mode() -> None:
-    fig, ax = plt.subplots(1, 1)
+def compute_percent_yerr(func, base: float, base_std: float, trace: float, trace_std: float) -> Tuple[float, float]:
+    func_results = []
+    func_results.append(func(base + base_std, trace + trace_std))
+    func_results.append(func(base - base_std, trace + trace_std))
+    func_results.append(func(base + base_std, trace - trace_std))
+    func_results.append(func(base - base_std, trace - trace_std))
+    result_min = min(func_results)
+    result_max = max(func_results)
+    return base - result_min, result_max - base
 
-    legends = []
+def plot_diff_mode() -> None:
+    same_plot = False
+    if same_plot:
+        fig, ax = plt.subplots(1, 1)
+        ax2 = ax.twinx()
+    else:
+        fig, ax = plt.subplots(1, 1)
+        fig2, ax2 = plt.subplots(1, 1)
+
     for msg in msgs:
         msg_freqs = []
-        msg_latency_means_diff = []
+        msg_latency_diff = []
+        # msg_latency_diff_stdev = []
+        msg_latency_diff_percent = []
+        # msg_latency_diff_percent_stdev = [[], []]
         for freq in freqs:
+            # print(f'{msg} KB, {freq} Hz')
             run_file_base = get_run_file('base', msg, freq)
-            latency_mean_base = get_latency_mean(run_file_base)
-
             run_file_trace = get_run_file('trace', msg, freq)
-            latency_mean_trace = get_latency_mean(run_file_trace)
 
+            latency_mean_base = None
+            latency_mean_trace = None
+            if has_raw_latency_data:
+                latency_mean_base, latency_stdev_base, raw_latencies_base = get_latency_data(run_file_base)
+                latency_mean_trace, latency_stdev_trace, raw_latencies_trace = get_latency_data(run_file_trace)
+                # # Compute standard deviation of the difference between the two means
+                # # given the two standard deviations and sample size
+                # #   SD_diff = sqrt((SD_base^2 / N_base) + (SD_trace^2 / N_trace))
+                # # See: https://stats.stackexchange.com/a/87505
+                # print('base size:', raw_latencies_base.size)
+                # print('trace size:', raw_latencies_trace.size)
+                # latency_diff_stdev = math.sqrt(
+                #     (math.pow(latency_stdev_base, 2) / float(raw_latencies_base.size)) +
+                #     (math.pow(latency_stdev_trace, 2) / float(raw_latencies_trace.size))
+                # )
+                # print('base stdev:', latency_stdev_base)
+                # print('trace stdev:', latency_stdev_trace)
+                # print('diff stdev:', latency_diff_stdev)
+                # print()
+                # msg_latency_diff_stdev.append(latency_diff_stdev)
+            else:
+                latency_mean_base = get_latency_data(run_file_base)
+                latency_mean_trace = get_latency_data(run_file_trace)
+
+            def overhead(latency_base: float, latency_trace: float) -> float:
+                return 100.0 * (latency_trace - latency_base) / latency_base
+            msg_latency_diff_percent.append(overhead(latency_mean_base, latency_mean_trace))
+            latency_mean_diff = latency_mean_trace - latency_mean_base
+            msg_latency_diff.append(latency_mean_diff)
             msg_freqs.append(freq)
-            msg_latency_means_diff.append(latency_mean_trace - latency_mean_base)
-        ax.plot(msg_freqs, msg_latency_means_diff, 'D-')
-        legends.append(f'{msg} KB')
+
+            # yerr_percent_minus, yerr_percent_plus = compute_percent_yerr(overhead, latency_mean_base, latency_stdev_base, latency_mean_trace, latency_stdev_trace)
+            # print(yerr_percent_minus, yerr_percent_plus)
+            # print()
+            # msg_latency_diff_percent_stdev[0].append(yerr_percent_minus)
+            # msg_latency_diff_percent_stdev[1].append(yerr_percent_plus)
+
+        legend_label = f'{msg} KB'
+        if has_raw_latency_data:
+            # ax.errorbar(msg_freqs, msg_latency_diff, yerr=msg_latency_diff_stdev, capsize=5, fmt='-')
+            ax.plot(msg_freqs, msg_latency_diff, 'o-', label=legend_label)
+            # ax2.errorbar(msg_freqs, msg_latency_diff_percent, yerr=msg_latency_diff_percent_stdev, capsize=5, fmt='P--')
+            ax2.plot(msg_freqs, msg_latency_diff_percent, 'o-', label=legend_label)
+            # legends.append(f'{msg} KB')
+        else:
+            ax.plot(msg_freqs, msg_latency_diff, 'D-', label=legend_label)
 
     # xticks = {0}
     # xticks.update(set(msg_freqs).difference({10}))
@@ -173,16 +235,33 @@ def plot_diff_mode() -> None:
 
     if include_plot_title:
         ax.set(title='Latency overhead of tracing for message publication')
+        if not same_plot:
+            ax2.set(title='Latency overhead of tracing for message publication')
     ax.set(xlabel='publishing frequency (Hz)')
     ax.set(ylabel='mean latency overhead (ms)')
     ax.set(xticks=xticks, xlim=(min(xticks)-25, max(xticks)+50))
-    ax.legend(legends)
+    ax.legend(fontsize=12)
     ax.grid()
     fig.tight_layout()
+    if same_plot:
+        ax2.set(ylabel='mean latency overhead (\%)')
+    else:
+        ax2.set(xlabel='publishing frequency (Hz)')
+        ax2.set(ylabel='mean latency overhead (\%)')
+        ax2.set(xticks=xticks, xlim=(min(xticks)-25, max(xticks)+50))
+        ax2.legend(fontsize=12)
+        ax2.grid()
+        fig2.tight_layout()
 
     filename = f'./{experiment_dir}/figure_2'
-    fig.savefig(f'{filename}.png')
-    fig.savefig(f'{filename}.svg')
+    if same_plot:
+        fig.savefig(f'{filename}.png')
+        fig.savefig(f'{filename}.svg')
+    else:
+        fig.savefig(f'{filename}_abs.png')
+        fig.savefig(f'{filename}_abs.svg')
+        fig2.savefig(f'{filename}_per.png')
+        fig2.savefig(f'{filename}_per.svg')
 
 
 def main(argv=sys.argv[1:]) -> int:

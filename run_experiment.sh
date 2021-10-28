@@ -184,6 +184,7 @@ cmd             = $0 $*
 host            = ${host}
 as_root         = ${as_root}
 policy          = ${policy}
+rt_run_options  = ${rt_run_options_p}, ${rt_run_options_s}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
