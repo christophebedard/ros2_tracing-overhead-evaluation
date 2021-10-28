@@ -197,8 +197,10 @@ max_freq        = ${max_freq}
   echo ""
   # Also include exact repo hashes
   echo "$(cd ${base_ws} && vcs export src/ --exact)" >> ${c_params_file}
-  # Also include Cyclone DDS config file
-  echo "$(cat ${cyclonedds_config_file})" >> ${c_params_file}
+  # Also include Cyclone DDS config file if applicable
+  if [[ "${c_rmw_impl}" == "rmw_cyclonedds_cpp" ]]; then
+    echo "$(cat ${cyclonedds_config_file})" >> ${c_params_file}
+  fi
 }
 
 function run() {
