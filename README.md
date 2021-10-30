@@ -66,6 +66,9 @@
     ```sh
     python3 plot_experiment.py exp-YYYYMMDDTHHMMSS-ABCD
     ```
+    * see other options at the top of the file to:
+        * print out approximate frequencies (to confirm that the target pub/sub frequency is hit)
+        * include titles in plot
 
 ## Useful commands
 

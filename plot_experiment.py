@@ -38,10 +38,13 @@ freqs = [100, 500, 1000, 2000]
 msgs = [1, 32, 64, 256]
 
 # If True, a special branch of performance_test must have been used: christophebedard/raw-data
+# From: https://gitlab.com/christophebedard/performance_test
 # Then we expect to be able to read the raw latency values
 has_raw_latency_data = True
 # Whether to include titles above plots
 include_plot_title = False
+# Whether to print out approximate frequencies to confirm that the target pub/sub frequency is hit
+print_approximate_frequencies = True
 
 
 experiment_dir = None
@@ -105,7 +108,7 @@ def get_experiment_run_name(
     :param mode: the mode
     :param msg: the msg size
     :param freq: the publishing frequency
-    :return: the path to the file for that specific run
+    :return: the file name for that specific run
     """
     assert mode in ('base', 'trace')
     # use '_s' suffix file because that's the one that contains the latency data (subscriber)
@@ -172,6 +175,27 @@ def get_latency_data_raw(run_file: str) -> Tuple[float, float, pd.Series]:
     return raw_latencies.mean(), raw_latencies.std(), raw_latencies
 
 
+def get_approximate_frequency(
+    raw_latencies: pd.Series,
+    runtime_max: float = float(20*60 + 5),
+    runtime_ignore: float = 5.0,
+) -> float:
+    """
+    Get approximate pub/sub frequency.
+
+    :param raw_latencies: the raw latency values
+    :param runtime_max: the max run time for the experiment (should match time in other script)
+    :param runtime_ignore: the ignored time for the experiment (should match time in other script)
+    :return: the approximate frequency
+    """
+    # Each individual experiment is run for runtime_max seconds, but the first runtime_ignore
+    # seconds are ignored and we don't get latency values for those, so subtract it from the total
+    total_runtime = runtime_max - runtime_ignore
+    num_latencies = raw_latencies.size
+    # frequency [Hz] = number of messages / total time [s]
+    return num_latencies / total_runtime
+
+
 def plot_mode(
     ax,
     mode: str,
@@ -192,8 +216,11 @@ def plot_mode(
 
             latency_mean = None
             if has_raw_latency_data:
-                latency_mean, latency_stdev, _ = get_latency_data_raw(run_file)
+                latency_mean, latency_stdev, latencies_raw = get_latency_data_raw(run_file)
                 msg_latencies_stdev.append(latency_stdev)
+                if print_approximate_frequencies:
+                    approx_freq = get_approximate_frequency(latencies_raw)
+                    print(f'{mode:<5}: {msg:>3}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
             else:
                 latency_mean = get_latency_data(run_file)
 
@@ -376,9 +403,7 @@ def main(argv=sys.argv[1:]) -> int:
     plt.rc('axes', titlesize=20)
 
     plot_modes()
-
     plot_diff_mode()
-
     plt.show()
 
     return 0
