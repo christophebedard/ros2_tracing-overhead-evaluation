@@ -36,6 +36,8 @@ import pandas as pd
 # Set experiment parameters
 freqs = [100, 500, 1000, 2000]
 msgs = [1, 32, 64, 256]
+runtime_max = 40*60 + 5
+runtime_ignore = 5
 
 # If True, a special branch of performance_test must have been used: christophebedard/raw-data
 # From: https://gitlab.com/christophebedard/performance_test
@@ -177,15 +179,11 @@ def get_latency_data_raw(run_file: str) -> Tuple[float, float, pd.Series]:
 
 def get_approximate_frequency(
     raw_latencies: pd.Series,
-    runtime_max: float = float(20*60 + 5),
-    runtime_ignore: float = 5.0,
 ) -> float:
     """
     Get approximate pub/sub frequency.
 
     :param raw_latencies: the raw latency values
-    :param runtime_max: the max run time for the experiment (should match time in other script)
-    :param runtime_ignore: the ignored time for the experiment (should match time in other script)
     :return: the approximate frequency
     """
     # Each individual experiment is run for runtime_max seconds, but the first runtime_ignore
@@ -193,7 +191,7 @@ def get_approximate_frequency(
     total_runtime = runtime_max - runtime_ignore
     num_latencies = raw_latencies.size
     # frequency [Hz] = number of messages / total time [s]
-    return num_latencies / total_runtime
+    return float(num_latencies) / float(total_runtime)
 
 
 def plot_mode(
