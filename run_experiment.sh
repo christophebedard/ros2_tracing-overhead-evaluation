@@ -221,6 +221,7 @@ function run() {
   if [[ "$do_trace" -eq 1 ]]; then
     # Setup and start tracing
     lttng create "${session_name}" --output="trace-${session_name}"
+    lttng enable-channel -u ros2 --discard --num-subbuf=2 --subbuf-size=2M --buffers-pid --read-timer 200000 --monitor-timer 0
     lttng enable-event -c ros2 -u 'ros2:*'
     lttng start
   fi
