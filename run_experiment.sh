@@ -78,9 +78,6 @@ rt_run_options_s=""
 rmem_default="$(sysctl net.core.rmem_default -n)"
 rmem_max="$(sysctl net.core.rmem_max -n)"
 ondemand="$(systemctl is-enabled ondemand)"
-governor="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-min_freq="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)"
-max_freq="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)"
 if [ ${c_is_realtime} -eq 1 ]; then
   # Make sure SMT is disabled
   smt_active=$(cat /sys/devices/system/cpu/smt/active)
@@ -125,21 +122,10 @@ if [ ${c_is_realtime} -eq 1 ]; then
     exit 1
   fi
 
-  # Make sure the performance governor is used
-  if [[ "${governor}" != "performance" ]]; then
-    echo "Scaling governor not set to performance"
-    echo "  Set by running:"
-    echo "    echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null"
-    exit 1
-  fi
-
-  # Make sure the CPU frequency is constant
-  if [[ "${min_freq}" != "${max_freq}" ]]; then
-    echo "CPU frequency not constant"
-    echo "  Get max CPU frequency by running:"
-    echo "    cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq"
-    echo "  Set min CPU frequency to that value by running:"
-    echo "    echo \$MAX_FREQ | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null"
+  # Make sure there is no scaling governor (otherwise SpeedStep is not disabled)
+  if [ -f "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor" ]; then
+    echo "Scaling not disable"
+    echo "  See README"
     exit 1
   fi
 
@@ -188,9 +174,6 @@ rt_run_options  = ${rt_run_options_p}, ${rt_run_options_s}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
-governor        = ${governor}
-min_freq        = ${min_freq}
-max_freq        = ${max_freq}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}

@@ -20,32 +20,22 @@
         net.core.rmem_max=67108864
         net.core.rmem_default=67108864
         ```
-    * disable SMT
-        * by adding `nosmt` to `GRUB_CMDLINE_LINUX` in /etc/default/grub, then running:
-        ```sh
-        sudo update-grub && sudo reboot -h now
-        ```
-        * or by running:
-        ```sh
-        sudo bash -c 'echo off > /sys/devices/system/cpu/smt/control'
-        ```
-    * disable performance governor
-        ```sh
-        sudo systemctl disable ondemand
-        ```
-    * set scaling governor to `performance`
-        ```sh
-        echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
-        ```
-    * set constant CPU frequency by setting min frequency to max frequency
-        * get max CPU frequency by running:
-        ```sh
-        cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq
-        ```
-        * then set set min CPU frequency to that value by running:
-        ```sh
-        echo $MAX_FREQ | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq > /dev/null
-        ```
+    * disable power-saving features
+        * note: this assumes an Intel processor is used
+        * BIOS
+            * Performance > HyperThread Control: select disabled
+            * Performance > C-States Control: deselect to disable
+            * Performance > Intel SpeedStep: deselect to disable
+            * note: the exact names might be different depending on your BIOS, but disabling any and all power-saving features significantly improves performance
+        * kernel
+            * add following parameters (space-separated) to `GRUB_CMDLINE_LINUX` in /etc/default/grub
+                * disable SMT: add `nosmt`
+                * disbale C-states: add `processor.max_cstate=0 intel_idle.max_cstate=0`
+            * then run:
+                ```sh
+                sudo update-grub && sudo reboot -h now
+                ```
+            * note: these might be redundant when setting BIOS parameters
 1. Setup system to build ROS 2 and enable tracing
     * https://docs.ros.org/en/rolling/Installation/Ubuntu-Development-Setup.html
     * https://gitlab.com/ros-tracing/ros2_tracing
