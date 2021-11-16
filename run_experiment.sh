@@ -155,6 +155,7 @@ function print_params() {
   # Print params and write to file so that they are kept alongside the results
   local host=`hostname -s`
   local policy=`chrt -p $$`
+  local cpu_freqs=`cat /proc/cpuinfo | awk '/cpu MHz/{print $4}' | awk 'ORS=", "' | sed 's/, $//'`
   local params="\
 Params: ${experiment_dir}
 frequencies     = ${c_freqs[@]}
@@ -174,6 +175,7 @@ rt_run_options  = ${rt_run_options_p}, ${rt_run_options_s}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
+cpu_freqs       = ${cpu_freqs}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}
