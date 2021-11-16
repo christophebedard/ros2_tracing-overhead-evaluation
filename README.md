@@ -43,6 +43,7 @@
     ```sh
     ./setup_workspace.sh
     ```
+    * this creates two workspaces, one without tracing and one with tracing, and builds them in release mode
 1. Run [performance_test](https://gitlab.com/ApexAI/performance_test) experiments using [`run_experiment.sh`](./run_experiment.sh)
     * modify the configuration if needed (`c_*` variables at the top of the file)
     * experiment data will be written to `exp-YYYYMMDDTHHMMSS-ABCD`
