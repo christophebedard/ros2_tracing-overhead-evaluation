@@ -154,6 +154,8 @@ fi
 function print_params() {
   # Print params and write to file so that they are kept alongside the results
   local host=`hostname -s`
+  local lttng_version=`lttng --version`
+  local lttng_version_f=`apt list --installed lttng-tools liblttng-ust-dev python3-lttng python3-babeltrace 2>/dev/null | awk 'ORS=", "' | sed 's/, $//' | sed 's/Listing..., //'`
   local policy=`chrt -p $$`
   local cpu_freqs=`cat /proc/cpuinfo | awk '/cpu MHz/{print $4}' | awk 'ORS=", "' | sed 's/, $//'`
   local uname_a=`uname -a`
@@ -171,6 +173,8 @@ cyclonedds_uri  = ${CYCLONEDDS_URI}
 cmd             = $0 $*
 host            = ${host}
 as_root         = ${as_root}
+lttng_version   = ${lttng_version}
+lttng_version_f = ${lttng_version_f}
 policy          = ${policy}
 rt_run_options  = ${rt_run_options_p}, ${rt_run_options_s}
 rmem_default    = ${rmem_default}
