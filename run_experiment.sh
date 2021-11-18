@@ -156,6 +156,7 @@ function print_params() {
   local host=`hostname -s`
   local policy=`chrt -p $$`
   local cpu_freqs=`cat /proc/cpuinfo | awk '/cpu MHz/{print $4}' | awk 'ORS=", "' | sed 's/, $//'`
+  local uname_a=`uname -a`
   local params="\
 Params: ${experiment_dir}
 frequencies     = ${c_freqs[@]}
@@ -176,6 +177,7 @@ rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
 cpu_freqs       = ${cpu_freqs}
+uname_a         = ${uname_a}
 "
   echo -e "${params}"
   echo -e "${params}" > ${c_params_file}
