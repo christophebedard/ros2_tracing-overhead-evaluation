@@ -26,9 +26,9 @@
             * Performance > HyperThread Control: select disabled
             * Performance > C-States Control: deselect to disable
             * Performance > Intel SpeedStep: deselect to disable
-            * note: the exact names might be different depending on your BIOS, but disabling any and all power-saving features significantly improves performance
+            * note: the exact locations and names of these options might be different depending on your BIOS, but disabling any and all power-saving features significantly improves performance and lowers jitter
         * kernel
-            * add following parameters (space-separated) to `GRUB_CMDLINE_LINUX` in /etc/default/grub
+            * add following parameters (space-separated) to `GRUB_CMDLINE_LINUX` in `/etc/default/grub`
                 * disable SMT: add `nosmt`
                 * disbale C-states: add `processor.max_cstate=0 intel_idle.max_cstate=0`
             * then run:
@@ -51,19 +51,20 @@
     ./run_experiment.sh
     ```
     * in general, results are better if the experiment is run right after a system reboot
-    * experiment parameters are printed at the beginning and are written to `experiment_params.log`
+    * experiment parameters are printed at the beginning and are written to `experiment_params.log` under the experiment directory
 1. Plot results by providing name of directory containing the experiment data using [`plot_experiment.py`](./plot_experiment.py)
-    * make sure the `freqs` and `msgs` arrays match the ones defined in `run_experiment.sh`
+    * make sure the `freqs` & `msgs` arrays and `runtime_max` & `runtime_ignore` values match the ones defined in `run_experiment.sh` when running the experiment and written to `exp-YYYYMMDDTHHMMSS-ABCD/experiment_params.log`
     ```sh
     python3 plot_experiment.py exp-YYYYMMDDTHHMMSS-ABCD
     ```
+    * see comments at the top of the file for dependencies
     * see other options at the top of the file to:
         * print out approximate frequencies (to confirm that the target pub/sub frequency is hit)
         * include titles in plot
 
 ## Useful commands
 
-* For running experiments on a separate real-time system
+* For running experiments on a separate system
     * Change ownership of directories/file from `root` to user
         ```sh
         sudo chown -R $USER:$USER exp-*
