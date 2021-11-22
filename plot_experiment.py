@@ -395,8 +395,10 @@ def main(argv=sys.argv[1:]) -> int:
     global experiment_dir
     experiment_dir = argv[0].strip('/')
     print(f'Experiment directory: {experiment_dir}')
-    print(f'  frequencies = {", ".join(str(f) for f in freqs)}')
-    print(f'  messages    = {", ".join(str(m) for m in msgs)}')
+    print(f'  frequencies    = {", ".join(str(f) for f in freqs)}')
+    print(f'  messages       = {", ".join(str(m) for m in msgs)}')
+    print(f'  runtime_max    = {runtime_max}')
+    print(f'  runtime_ignore = {runtime_ignore}')
 
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif', size=14)
