@@ -36,8 +36,8 @@ import pandas as pd
 # Set experiment parameters
 freqs = [100, 500, 1000, 2000]
 msgs = [1, 32, 64, 256]
-runtime_max = 40*60 + 5
-runtime_ignore = 5
+runtime_max = 60*60 + 10
+runtime_ignore = 10
 
 # If True, a special branch of performance_test must have been used: christophebedard/raw-data
 # From: https://gitlab.com/christophebedard/performance_test

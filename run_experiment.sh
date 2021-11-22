@@ -31,10 +31,10 @@
 # Configuration
 declare -a c_freqs=("100" "500" "1000" "2000")
 declare -a c_msgs=("1" "32" "64" "256")
-c_max_runtime=1205
-c_ignore=5
+c_max_runtime=3610
+c_ignore=10
 c_comm="rclcpp-single-threaded-executor"
-c_rmw_impl="rmw_cyclonedds_cpp"
+c_rmw_impl="rmw_fastrtps_cpp"
 c_params_file="experiment_params.log"
 
 c_is_realtime=1
