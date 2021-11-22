@@ -243,7 +243,7 @@ def plot_modes(
     title: str = 'Message latencies without (left) vs. with tracing (right)',
     xlabel: str = 'publishing frequency (Hz)',
     ylabel: str = 'mean latency (ms)',
-    figure_filename: str = 'figure_1-latencies',
+    figure_filename: str = '6_results_latencies',
     legend_fontsize: int = 12,
 ) -> None:
     """
@@ -278,6 +278,7 @@ def plot_diff_mode(
     xlabel: str = 'publishing frequency (Hz)',
     ylabel_abs: str = 'mean latency overhead (ms)',
     ylabel_per: str = 'mean latency overhead (\%)',  # noqa: W605 (escape necessary for TeX)
+    figure_filename: str = '6_results_overhead',
     legend_fontsize: int = 12,
 ) -> None:
     """
@@ -288,6 +289,7 @@ def plot_diff_mode(
     :param xlabel: x axis label
     :param ylabel_abs: y axis label for the (sub)plot with absolute values
     :param ylabel_per: y axis label for the (sub)plot with relative values
+    :param figure_filename: base file name for the figure (without file extension)
     :param legend_fontsize: the legend font size;
         a lower value than the default can help make it fit better into the plot
     """
@@ -374,7 +376,7 @@ def plot_diff_mode(
         fig.tight_layout()
         fig2.tight_layout()
 
-    filename = f'./{experiment_dir}/figure_2-overhead'
+    filename = f'./{experiment_dir}/{figure_filename}'
     if same_plot:
         fig.savefig(f'{filename}.png')
         fig.savefig(f'{filename}.svg')
