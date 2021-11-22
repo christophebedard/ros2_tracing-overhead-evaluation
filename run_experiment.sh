@@ -153,7 +153,9 @@ function print_params() {
   local lttng_version=`lttng --version`
   local lttng_version_f=`apt list --installed lttng-tools liblttng-ust-dev python3-lttng python3-babeltrace 2>/dev/null | awk 'ORS=", "' | sed 's/, $//' | sed 's/Listing..., //'`
   local policy=`chrt -p $$`
+  local cpu_name=`lscpu | grep "Model name" | awk '{split($0,a,":"); print a[2]}' | awk '{$1=$1;print}'`
   local cpu_freqs=`cat /proc/cpuinfo | awk '/cpu MHz/{print $4}' | awk 'ORS=", "' | sed 's/, $//'`
+  local ram_gb=`grep MemTotal /proc/meminfo | awk '{print $2 / 1000000}'`
   local uname_a=`uname -a`
   local params="\
 Params: ${experiment_dir}
@@ -176,7 +178,9 @@ rt_run_options  = ${rt_run_options_p}, ${rt_run_options_s}
 rmem_default    = ${rmem_default}
 rmem_max        = ${rmem_max}
 ondemand        = ${ondemand}
+cpu_name        = ${cpu_name}
 cpu_freqs       = ${cpu_freqs}
+ram_gb          = ${ram_gb}
 uname_a         = ${uname_a}
 "
   echo -e "${params}"
