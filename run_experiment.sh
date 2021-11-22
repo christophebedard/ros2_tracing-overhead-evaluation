@@ -31,17 +31,13 @@
 # Configuration
 declare -a c_freqs=("100" "500" "1000" "2000")
 declare -a c_msgs=("1" "32" "64" "256")
-# declare -a c_freqs=("500")
-# declare -a c_msgs=("256")
 c_max_runtime=1205
-# c_max_runtime=15
 c_ignore=5
 c_comm="rclcpp-single-threaded-executor"
 c_rmw_impl="rmw_cyclonedds_cpp"
 c_params_file="experiment_params.log"
 
 c_is_realtime=1
-# c_is_realtime=0
 # # Use 3rd and 4th CPUs
 # cpu_0=2
 # cpu_1=3
