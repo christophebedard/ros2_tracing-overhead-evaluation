@@ -225,7 +225,7 @@ def plot_mode(
             msg_latencies.append(latency_mean)
             msg_freqs.append(freq)
 
-        label = f'{msg} KB'
+        label = f'{msg} KiB'
         if has_raw_latency_data:
             ax.errorbar(
                 msg_freqs, msg_latencies,
@@ -312,7 +312,7 @@ def plot_diff_mode(
         # msg_latency_diff_stdev = []
         msg_latency_diff_percent = []
         for freq in freqs:
-            # print(f'{msg} KB, {freq} Hz')
+            # print(f'{msg} KiB, {freq} Hz')
             run_file_base = get_run_file('base', msg, freq)
             run_file_trace = get_run_file('trace', msg, freq)
 
@@ -350,7 +350,7 @@ def plot_diff_mode(
             msg_latency_diff.append(latency_mean_diff)
             msg_freqs.append(freq)
 
-        legend_label = f'{msg} KB'
+        legend_label = f'{msg} KiB'
         if has_raw_latency_data:
             # ax.errorbar(msg_freqs, msg_latency_diff, yerr=msg_latency_diff_stdev, capsize=5, fmt='-')
             ax.plot(msg_freqs, msg_latency_diff, 'o-', label=legend_label)
