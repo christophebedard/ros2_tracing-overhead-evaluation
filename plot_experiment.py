@@ -409,9 +409,12 @@ def main(argv=sys.argv[1:]) -> int:
     print(f'  runtime_max    = {runtime_max}')
     print(f'  runtime_ignore = {runtime_ignore}')
 
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif', size=14)
-    plt.rc('axes', titlesize=20)
+    plt.rcParams.update({
+        'text.usetex': True,
+        'font.family': 'serif',
+        'font.size': 14,
+        'axes.titlesize': 20,
+    })
 
     plot_modes()
     plot_diff_mode()
