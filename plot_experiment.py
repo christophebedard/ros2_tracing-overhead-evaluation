@@ -265,6 +265,8 @@ def plot_modes(
         fig.suptitle(title, size=plt.rcParams['axes.titlesize'])
     fig.supxlabel(xlabel, size=plt.rcParams['font.size'])
     ax1.set(ylabel=ylabel)
+    ax1.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
     ax2.legend(fontsize=legend_fontsize)
 
     filename = f'./{experiment_dir}/{figure_filename}'
@@ -359,6 +361,8 @@ def plot_diff_mode(
             ax2.set(title=title)
     ax.set(ylabel=ylabel_abs)
     ax2.set(ylabel=ylabel_per)
+    ax.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
     xticks = get_frequency_ticks()
     for axis in (ax, ax2):
         axis.set(xticks=xticks, xlim=(min(xticks), max(xticks)+75))
