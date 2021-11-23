@@ -218,7 +218,7 @@ def plot_mode(
                 msg_latencies_stdev.append(latency_stdev)
                 if print_approximate_frequencies:
                     approx_freq = get_approximate_frequency(latencies_raw)
-                    print(f'{mode:<5}: {msg:>3}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
+                    print(f'  {mode:<5}: {msg:>3}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
             else:
                 latency_mean = get_latency_data(run_file)
 
@@ -258,6 +258,9 @@ def plot_modes(
     :param legend_fontsize: the legend font size;
         a lower value than the default can help make it fit better into the plot
     """
+    if print_approximate_frequencies:
+        print('Approximate pub-sub frequencies:')
+
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, constrained_layout=True)
 
     plot_mode(ax1, 'base')
