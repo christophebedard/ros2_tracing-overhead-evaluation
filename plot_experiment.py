@@ -245,6 +245,8 @@ def plot_modes(
     ylabel: str = 'mean latency (ms)',
     figure_filename: str = '6_results_latencies',
     legend_fontsize: int = 12,
+    legend_loc: str = 'center',
+    legend_bbox_to_anchor = (0.725, 0.675),  # Configured manually
 ) -> None:
     """
     Plot baseline and tracing latency results separately.
@@ -267,7 +269,7 @@ def plot_modes(
     ax1.set(ylabel=ylabel)
     ax1.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
-    ax2.legend(fontsize=legend_fontsize)
+    ax2.legend(fontsize=legend_fontsize, loc=legend_loc, bbox_to_anchor=legend_bbox_to_anchor)
 
     filename = f'./{experiment_dir}/{figure_filename}'
     fig.savefig(f'{filename}.png')
