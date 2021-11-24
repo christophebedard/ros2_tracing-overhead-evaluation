@@ -30,7 +30,7 @@
 
 # Configuration
 declare -a c_freqs=("100" "500" "1000" "2000")
-declare -a c_msgs=("1" "32" "64" "256")
+declare -a c_msgs=("1k" "32k" "64k" "256k")
 c_max_runtime=3610
 c_ignore=10
 c_comm="rclcpp-single-threaded-executor"
@@ -201,7 +201,7 @@ function run() {
   local do_trace=$4
   local perf_test_path=$5
 
-  local msg_name="Array${msg}k"
+  local msg_name="Array${msg}"
   local logfile_name="${exp_name}_${msg_name}_${freq}hz"
   local logfile_name_pub="${logfile_name}_p"
   local logfile_name_sub="${logfile_name}_s"
