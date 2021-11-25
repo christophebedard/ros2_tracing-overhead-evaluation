@@ -35,7 +35,7 @@ import pandas as pd
 
 # Set experiment parameters
 freqs = [100, 500, 1000, 2000]
-msgs = [1, 32, 64, 256]
+msgs = [(1, 'k'), (32, 'k'), (64 ,'k'), (256, 'k')]
 runtime_max = 60*60 + 10
 runtime_ignore = 10
 
@@ -102,6 +102,7 @@ def get_file_from_prefix(prefix: str) -> str:
 def get_experiment_run_name(
     mode: str,
     msg: int,
+    msg_unit: str,
     freq: int,
 ) -> str:
     """
@@ -109,17 +110,19 @@ def get_experiment_run_name(
 
     :param mode: the mode
     :param msg: the msg size
+    :param msg_unit: the msg unit prefix
     :param freq: the publishing frequency
     :return: the file name for that specific run
     """
     assert mode in ('base', 'trace')
     # use '_s' suffix file because that's the one that contains the latency data (subscriber)
-    return f'1-{mode}_Array{msg}k_{freq}hz_s'
+    return f'1-{mode}_Array{msg}{msg_unit}_{freq}hz_s'
 
 
 def get_run_file(
     mode: str,
     msg: int,
+    msg_unit: str,
     freq: int,
 ) -> str:
     """
@@ -127,21 +130,13 @@ def get_run_file(
 
     :param mode: the mode
     :param msg: the msg size
+    :param msg_unit: the msg unit prefix
     :param freq: the publishing frequency
     :return: the path to the file for that specific run
     """
     assert mode in ('base', 'trace')
-    name = get_experiment_run_name(mode, msg, freq)
+    name = get_experiment_run_name(mode, msg, msg_unit, freq)
     return get_file_from_prefix(name)
-
-
-def get_experiment_runs() -> List[Tuple[int, int]]:
-    """Get list of (msg size, frequency) combinations."""
-    runs = []
-    for msg in msgs:
-        for freq in freqs:
-            runs.append((msg, freq))
-    return runs
 
 
 def get_latency_data(run_file: str) -> float:
@@ -194,6 +189,14 @@ def get_approximate_frequency(
     return float(num_latencies) / float(total_runtime)
 
 
+def get_full_message_size_unit(simple_unit: str) -> str:
+    """Convert simple message size unit prefix to full abbreviation."""
+    return {
+        'k': 'KiB',
+        'm': 'MiB',
+    }[simple_unit]
+
+
 def plot_mode(
     ax,
     mode: str,
@@ -205,12 +208,13 @@ def plot_mode(
     :param mode: the mode ('base' or 'trace')
     """
     assert mode in ('base', 'trace')
-    for msg in msgs:
+    for msg, msg_unit in msgs:
+        msg_full_unit = get_full_message_size_unit(msg_unit)
         msg_freqs = []
         msg_latencies = []
         msg_latencies_stdev = []
         for freq in freqs:
-            run_file = get_run_file(mode, msg, freq)
+            run_file = get_run_file(mode, msg, msg_unit, freq)
 
             latency_mean = None
             if has_raw_latency_data:
@@ -218,14 +222,14 @@ def plot_mode(
                 msg_latencies_stdev.append(latency_stdev)
                 if print_approximate_frequencies:
                     approx_freq = get_approximate_frequency(latencies_raw)
-                    print(f'  {mode:<5}: {msg:>3}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
+                    print(f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
             else:
                 latency_mean = get_latency_data(run_file)
 
             msg_latencies.append(latency_mean)
             msg_freqs.append(freq)
 
-        label = f'{msg} KiB'
+        label = f'{msg} {msg_full_unit}'
         if has_raw_latency_data:
             ax.errorbar(
                 msg_freqs, msg_latencies,
@@ -306,15 +310,16 @@ def plot_diff_mode(
         fig, ax = plt.subplots(1, 1)
         fig2, ax2 = plt.subplots(1, 1)
 
-    for msg in msgs:
+    for msg, msg_unit in msgs:
+        msg_full_unit = get_full_message_size_unit(msg_unit)
         msg_freqs = []
         msg_latency_diff = []
         # msg_latency_diff_stdev = []
         msg_latency_diff_percent = []
         for freq in freqs:
-            # print(f'{msg} KiB, {freq} Hz')
-            run_file_base = get_run_file('base', msg, freq)
-            run_file_trace = get_run_file('trace', msg, freq)
+            # print(f'{msg} {msg_full_unit}, {freq} Hz')
+            run_file_base = get_run_file('base', msg, msg_unit, freq)
+            run_file_trace = get_run_file('trace', msg, msg_unit, freq)
 
             latency_mean_base = None
             latency_mean_trace = None
@@ -350,7 +355,7 @@ def plot_diff_mode(
             msg_latency_diff.append(latency_mean_diff)
             msg_freqs.append(freq)
 
-        legend_label = f'{msg} KiB'
+        legend_label = f'{msg} {msg_full_unit}'
         if has_raw_latency_data:
             # ax.errorbar(msg_freqs, msg_latency_diff, yerr=msg_latency_diff_stdev, capsize=5, fmt='-')
             ax.plot(msg_freqs, msg_latency_diff, 'o-', label=legend_label)
@@ -405,7 +410,7 @@ def main(argv=sys.argv[1:]) -> int:
     experiment_dir = argv[0].strip('/')
     print(f'Experiment directory: {experiment_dir}')
     print(f'  frequencies    = {", ".join(str(f) for f in freqs)}')
-    print(f'  messages       = {", ".join(str(m) for m in msgs)}')
+    print(f'  messages       = {", ".join(str(m)+str(u) for m, u in msgs)}')
     print(f'  runtime_max    = {runtime_max}')
     print(f'  runtime_ignore = {runtime_ignore}')
 
