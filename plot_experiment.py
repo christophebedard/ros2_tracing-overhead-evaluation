@@ -222,7 +222,9 @@ def plot_mode(
                 msg_latencies_stdev.append(latency_stdev)
                 if print_approximate_frequencies:
                     approx_freq = get_approximate_frequency(latencies_raw)
-                    print(f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz')
+                    is_freq_good = not math.isclose(0, approx_freq) and abs(freq - approx_freq) <= 0.1
+                    freq_result_char = '✅' if is_freq_good else '❌'
+                    print(f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz {freq_result_char}')
             else:
                 latency_mean = get_latency_data(run_file)
 
