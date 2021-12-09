@@ -283,6 +283,7 @@ def plot_modes(
     filename = f'./{experiment_dir}/{figure_filename}'
     fig.savefig(f'{filename}.png')
     fig.savefig(f'{filename}.svg')
+    fig.savefig(f'{filename}.pdf')
 
 
 def plot_diff_mode(
@@ -396,11 +397,14 @@ def plot_diff_mode(
     if same_plot:
         fig.savefig(f'{filename}.png')
         fig.savefig(f'{filename}.svg')
+        fig.savefig(f'{filename}.pdf')
     else:
         fig.savefig(f'{filename}_abs.png')
         fig.savefig(f'{filename}_abs.svg')
+        fig.savefig(f'{filename}_abs.pdf')
         fig2.savefig(f'{filename}_per.png')
         fig2.savefig(f'{filename}_per.svg')
+        fig2.savefig(f'{filename}_per.pdf')
 
 
 def main(argv=sys.argv[1:]) -> int:
