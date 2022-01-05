@@ -2,6 +2,24 @@
 
 [`ros2_tracing`](https://gitlab.com/ros-tracing/ros2_tracing) latency overhead evaluation experiment.
 
+This is part of the [`ros2_tracing` paper](https://arxiv.org/abs/2201.00393).
+If you use or refer to `ros2_tracing` or this repository, please cite:
+<!-- TODO replace with early access/published version when available -->
+* C. Bédard, I. Lütkebohle, and M. Dagenais, "ros2_tracing: Multipurpose Low-Overhead Framework for Real-Time Tracing of ROS 2," *arXiv preprint arXiv:2201.00393*, 2022.
+
+BibTeX:
+
+```bibtex
+@misc{bedard2022ros2tracing,
+    title={ros2_tracing: Multipurpose Low-Overhead Framework for Real-Time Tracing of ROS 2},
+    author={Christophe Bédard and Ingo Lütkebohle and Michel Dagenais},
+    year={2022},
+    eprint={2201.00393},
+    archivePrefix={arXiv},
+    primaryClass={cs.RO}
+}
+```
+
 ## Experiment
 
 1. Set up and tune real-time system
