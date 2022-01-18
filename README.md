@@ -70,6 +70,7 @@ BibTeX:
     ```
     * in general, results are better if the experiment is run right after a system reboot
     * experiment parameters are printed at the beginning and are written to `experiment_params.log` under the experiment directory
+    * LTTng is [configured and optimized for real-time applications](https://gitlab.com/ros-tracing/ros2_tracing#real-time)
 1. Plot results by providing name of directory containing the experiment data using [`plot_experiment.py`](./plot_experiment.py)
     * make sure the `freqs` & `msgs` arrays and `runtime_max` & `runtime_ignore` values match the ones defined in `run_experiment.sh` when running the experiment and written to `exp-YYYYMMDDTHHMMSS-ABCD/experiment_params.log`
     ```sh
