@@ -156,20 +156,20 @@ def get_latency_data(run_file: str) -> float:
     return (received * latency_mean).sum() / received.sum()
 
 
-def get_latency_data_raw(run_file: str) -> Tuple[float, float, pd.Series]:
+def get_latency_data_raw(run_file: str) -> Tuple[float, float, float, pd.Series]:
     """
     Get latency data.
 
     This is the raw version, which gives  mean value.
 
     :param run_file: the data file
-    :return: latency mean, standard deviation, raw latency values
+    :return: latency mean, standard deviation, maximum, raw latency values
     """
     assert has_raw_latency_data
     dataframe = load_logfile_raw(run_file)
     # Raw latencies are in seconds, so convert to milliseconds
     raw_latencies = 1000 * dataframe['raw_latencies']
-    return raw_latencies.mean(), raw_latencies.std(), raw_latencies
+    return raw_latencies.mean(), raw_latencies.std(), raw_latencies.max(), raw_latencies
 
 
 def get_approximate_frequency(
@@ -208,18 +208,29 @@ def plot_mode(
     :param mode: the mode ('base' or 'trace')
     """
     assert mode in ('base', 'trace')
+    # Get colours from default cycler
+    # https://matplotlib.org/stable/users/prev_whats_new/dflt_style_changes.html#colors-in-default-property-cycle
+    colours = plt.rcParams["axes.prop_cycle"].by_key()['color']
+    colours_i = 0
+    boxplots = []
+    labels = []
     for msg, msg_unit in msgs:
         msg_full_unit = get_full_message_size_unit(msg_unit)
         msg_freqs = []
         msg_latencies = []
+        msg_latencies_worst = []
         msg_latencies_stdev = []
+        msg_latencies_raw = []
         for freq in freqs:
             run_file = get_run_file(mode, msg, msg_unit, freq)
 
             latency_mean = None
             if has_raw_latency_data:
-                latency_mean, latency_stdev, latencies_raw = get_latency_data_raw(run_file)
+                latency_mean, latency_stdev, latency_worst, latencies_raw = get_latency_data_raw(run_file)
+                print(f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: mean={latency_mean:>7.2f} ms, worst={latency_worst:>7.2f} ms')
+                msg_latencies_worst.append(latency_worst)
                 msg_latencies_stdev.append(latency_stdev)
+                msg_latencies_raw.append(latencies_raw)
                 if print_approximate_frequencies:
                     approx_freq = get_approximate_frequency(latencies_raw)
                     is_freq_good = not math.isclose(0, approx_freq) and abs(freq - approx_freq) <= 0.1
@@ -233,16 +244,40 @@ def plot_mode(
 
         label = f'{msg} {msg_full_unit}'
         if has_raw_latency_data:
-            ax.errorbar(
-                msg_freqs, msg_latencies,
-                yerr=msg_latencies_stdev,
-                capsize=5, fmt='D-', label=label)
+            # ax.errorbar(
+            #     msg_freqs, msg_latencies,
+            #     yerr=msg_latencies_stdev,
+            #     capsize=5, fmt='D-', color=colours[colours_i], label=label)
+            # ax.plot(msg_freqs, msg_latencies_worst, '_', color=colours[colours_i], markersize=10., markeredgewidth=2.)
+            colour_prop = {'color': colours[colours_i]}
+            medianprops = {'color': colours[colours_i]}#, 'alpha': 0.5}
+            boxplot = ax.boxplot(
+                msg_latencies_raw, positions=msg_freqs,
+                whis=(0, 100), sym='', widths=150,
+                manage_ticks=False,
+                showmeans=True,
+                meanline=True,
+                meanprops=colour_prop, medianprops=medianprops, boxprops=colour_prop, whiskerprops=colour_prop, capprops=colour_prop)
+            boxplots.append(boxplot["boxes"][0])
+            # Set whisker width to box width for each box
+            # https://stackoverflow.com/a/61017306
+            for i in range(len(msg_latencies_raw)):
+                # Lower cap, then upper cap
+                boxplot['caps'][2 * i].set_xdata(boxplot['boxes'][i].get_xdata()[:2])
+                boxplot['caps'][2 * i + 1].set_xdata(boxplot['boxes'][i].get_xdata()[:2])
+            labels.append(label)
         else:
             ax.plot(msg_freqs, msg_latencies, 'D-', label=label)
 
+        print('msg_freqs', msg_freqs)
+        colours_i += 1
+
     xticks = get_frequency_ticks()
-    ax.set(xticks=xticks, xlim=(min(xticks), max(xticks)+75))
+    print('xticks', xticks)
+    ax.set(xticks=xticks, xlim=(min(xticks), max(xticks)+100)) #75))
     ax.grid()
+
+    return boxplots, labels
 
 
 def plot_modes(
@@ -270,7 +305,7 @@ def plot_modes(
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, constrained_layout=True)
 
     plot_mode(ax1, 'base')
-    plot_mode(ax2, 'trace')
+    boxplots, labels = plot_mode(ax2, 'trace')
 
     if include_plot_title:
         fig.suptitle(title, size=plt.rcParams['axes.titlesize'])
@@ -278,7 +313,11 @@ def plot_modes(
     ax1.set(ylabel=ylabel)
     ax1.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
-    ax2.legend(fontsize=legend_fontsize, loc=legend_loc, bbox_to_anchor=legend_bbox_to_anchor)
+    # ax2.legend(fontsize=legend_fontsize, loc=legend_loc, bbox_to_anchor=legend_bbox_to_anchor)
+    legend = ax2.legend(boxplots, labels, fontsize=legend_fontsize, loc=legend_loc, bbox_to_anchor=legend_bbox_to_anchor)
+    # Increase width of line samples in legend
+    for line in legend.get_lines():
+        line.set_linewidth(3.)
 
     filename = f'./{experiment_dir}/{figure_filename}'
     fig.savefig(f'{filename}.png')
@@ -327,8 +366,8 @@ def plot_diff_mode(
             latency_mean_base = None
             latency_mean_trace = None
             if has_raw_latency_data:
-                latency_mean_base, latency_stdev_base, raw_latencies_base = get_latency_data_raw(run_file_base)
-                latency_mean_trace, latency_stdev_trace, raw_latencies_trace = get_latency_data_raw(run_file_trace)
+                latency_mean_base, latency_stdev_base, _, raw_latencies_base = get_latency_data_raw(run_file_base)
+                latency_mean_trace, latency_stdev_trace, _, raw_latencies_trace = get_latency_data_raw(run_file_trace)
                 # Standard deviation of the difference between the two means
                 # is too small (mostly by definition) to be significant
                 if False:
