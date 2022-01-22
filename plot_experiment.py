@@ -19,6 +19,7 @@ import glob
 import json
 import math
 import sys
+import textwrap
 from typing import List
 from typing import Tuple
 
@@ -156,20 +157,20 @@ def get_latency_data(run_file: str) -> float:
     return (received * latency_mean).sum() / received.sum()
 
 
-def get_latency_data_raw(run_file: str) -> Tuple[float, float, pd.Series]:
+def get_latency_data_raw(run_file: str) -> Tuple[float, float, float, float, pd.Series]:
     """
     Get latency data.
 
     This is the raw version, which gives  mean value.
 
     :param run_file: the data file
-    :return: latency mean, standard deviation, raw latency values
+    :return: latency mean, standard deviation, minimum, maximum, raw latency values
     """
     assert has_raw_latency_data
     dataframe = load_logfile_raw(run_file)
     # Raw latencies are in seconds, so convert to milliseconds
     raw_latencies = 1000 * dataframe['raw_latencies']
-    return raw_latencies.mean(), raw_latencies.std(), raw_latencies
+    return raw_latencies.mean(), raw_latencies.std(), raw_latencies.min(), raw_latencies.max(), raw_latencies
 
 
 def get_approximate_frequency(
@@ -206,20 +207,28 @@ def plot_mode(
 
     :param ax: the axis to use for plotting
     :param mode: the mode ('base' or 'trace')
+    :return: the min/mean/max/stdev data for each msg/freq combination
     """
     assert mode in ('base', 'trace')
+
+    # { (msg, msg_unit) -> { freq -> { mean, min, max, stdev } } }
+    data = {}
     for msg, msg_unit in msgs:
         msg_full_unit = get_full_message_size_unit(msg_unit)
         msg_freqs = []
         msg_latencies = []
         msg_latencies_stdev = []
+        msg_latencies_raw = []
+        # { freq -> { mean, min, max, stdev } }
+        data_freq = {}
         for freq in freqs:
             run_file = get_run_file(mode, msg, msg_unit, freq)
 
             latency_mean = None
             if has_raw_latency_data:
-                latency_mean, latency_stdev, latencies_raw = get_latency_data_raw(run_file)
+                latency_mean, latency_stdev, latency_min, latency_max, latencies_raw = get_latency_data_raw(run_file)
                 msg_latencies_stdev.append(latency_stdev)
+                msg_latencies_raw.append(latencies_raw)
                 if print_approximate_frequencies:
                     approx_freq = get_approximate_frequency(latencies_raw)
                     is_freq_good = not math.isclose(0, approx_freq) and abs(freq - approx_freq) <= 0.1
@@ -240,6 +249,8 @@ def plot_mode(
             msg_latencies.append(latency_mean)
             msg_freqs.append(freq)
 
+        data[(msg, msg_unit)] = data_freq
+
         label = f'{msg} {msg_full_unit}'
         if has_raw_latency_data:
             ax.errorbar(
@@ -252,6 +263,93 @@ def plot_mode(
     xticks = get_frequency_ticks()
     ax.set(xticks=xticks, xlim=(min(xticks), max(xticks) + 75))
     ax.grid()
+
+    return data
+
+
+def export_table(
+    data_base,
+    data_trace,
+    table_filename: str = '6_results_latencies_table',
+    table_caption: str = 'Comparison of Message Latencies with Minimum and Maximum Values',
+    table_label: str = 'latencies-comparison',
+) -> None:
+    """
+    Generate LaTeX table from data and write to file.
+
+    :param data_base: the data without tracing
+    :param data_trace: the data with tracing
+    :param table_filename: base file name for the table file (without file extension)
+    :param table_caption: the table caption
+    :param table_label: the table label, not including 'tab:'
+    """
+    assert 0 < len(data_base)
+    assert 0 < len(data_trace)
+
+    filename = f'./{experiment_dir}/{table_filename}.tex'
+    f = open(filename, 'w')
+
+    before = textwrap.dedent(r"""
+        \begin{table}[htb]
+        \begin{center}
+        \caption{$caption}
+        \begin{tabular}{ccccccc}
+        \toprule
+        % \multirow{2}{*}{\textbf{Message size (KiB)}} & \multirow{2}{*}{\textbf{Rate (Hz)}} & \multirow{2}{*}{\textbf{Tracing (N/Y)}} & \textbf{Min.} & \textbf{Avg.} & \textbf{Max.} & \textbf{Std.} \\
+        \textbf{Message size} & \textbf{Rate} & \textbf{Tracing} & \textbf{Min.} & \textbf{Avg.} & \textbf{Max.} & \textbf{Std.} \\
+        % \cline{4-7}
+        % \textbf{(KiB)} & \textbf{(Hz)} & \textbf{(N/Y)} & \multicolumn{4}{c}{\textbf{(ms)}} \\
+        \textbf{(KiB)} & \textbf{(Hz)} & \textbf{(N/Y)} & \textbf{(ms)} & \textbf{(ms)} & \textbf{(ms)} & \textbf{(ms)} \\
+        \midrule
+        """).replace('$caption', table_caption)  # noqa: E501
+    after = textwrap.dedent(r"""
+        \bottomrule
+        \end{tabular}
+        \label{tab:$label}
+        \end{center}
+        \end{table}
+        """).replace('$label', table_label)
+
+    print(before, file=f)
+
+    def print_data(
+        col_type,
+        msg_col,
+        freq_col,
+        data,
+    ) -> None:
+        d_min = data['min']
+        d_mean = data['mean']
+        d_max = data['max']
+        d_stdev = data['stdev']
+        d = f'{msg_col} & {freq_col} & {col_type} & {d_min:.3f} & {d_mean:.3f} & {d_max:.3f} & {d_stdev:.3f} \\\\'
+        print(d, file=f)
+
+    for msg, msg_unit in msgs:
+        for freq in freqs:
+            # Frequency value column covers both rows
+            freq_col = f'\multirow{{2}}{{*}}{{{freq}}}'  # noqa: W605
+            # Use multirow for msg column if first frequency row for this msg size
+            msg_col = ''
+            first_freq = 0 == freqs.index(freq)
+            if first_freq:
+                msg_col = f'\multirow{{{len(freqs) * 2}}}{{*}}{{{msg}}}'  # noqa: W605
+
+            print_data('N', msg_col, freq_col, data_base[(msg, msg_unit)][freq])
+            print_data('Y', '', '', data_trace[(msg, msg_unit)][freq])
+
+            # Only put separator between frequencies if not the last frequency
+            last_freq = freqs.index(freq) == len(freqs) - 1
+            if not last_freq:
+                print(r'\cline{2-7}', file=f)
+
+        # Only put a separator between messages if not the last message
+        last_msg = msgs.index((msg, msg_unit)) == len(msgs) - 1
+        if not last_msg:
+            print(r'\hline', file=f)
+
+    print(after, file=f)
+    f.close()
 
 
 def plot_modes(
@@ -278,8 +376,8 @@ def plot_modes(
 
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, constrained_layout=True)
 
-    plot_mode(ax1, 'base')
-    plot_mode(ax2, 'trace')
+    data_base = plot_mode(ax1, 'base')
+    data_trace = plot_mode(ax2, 'trace')
 
     if include_plot_title:
         fig.suptitle(title, size=plt.rcParams['axes.titlesize'])
@@ -293,6 +391,8 @@ def plot_modes(
     fig.savefig(f'{filename}.png')
     fig.savefig(f'{filename}.svg')
     fig.savefig(f'{filename}.pdf')
+
+    export_table(data_base, data_trace)
 
 
 def plot_diff_mode(
@@ -336,8 +436,10 @@ def plot_diff_mode(
             latency_mean_base = None
             latency_mean_trace = None
             if has_raw_latency_data:
-                latency_mean_base, latency_stdev_base, raw_latencies_base = get_latency_data_raw(run_file_base)
-                latency_mean_trace, latency_stdev_trace, raw_latencies_trace = get_latency_data_raw(run_file_trace)
+                latency_mean_base, latency_stdev_base, _, _, raw_latencies_base = \
+                    get_latency_data_raw(run_file_base)
+                latency_mean_trace, latency_stdev_trace, _, _, raw_latencies_trace = \
+                    get_latency_data_raw(run_file_trace)
                 # Standard deviation of the difference between the two means
                 # is too small (mostly by definition) to be significant
                 if False:
