@@ -35,8 +35,8 @@ import pandas as pd
 
 # Set experiment parameters
 freqs = [100, 500, 1000, 2000]
-msgs = [(1, 'k'), (32, 'k'), (64 ,'k'), (256, 'k')]
-runtime_max = 60*60 + 10
+msgs = [(1, 'k'), (32, 'k'), (64, 'k'), (256, 'k')]
+runtime_max = 60 * 60 + 10
 runtime_ignore = 10
 
 # If True, a special branch of performance_test must have been used: christophebedard/raw-data
@@ -224,7 +224,16 @@ def plot_mode(
                     approx_freq = get_approximate_frequency(latencies_raw)
                     is_freq_good = not math.isclose(0, approx_freq) and abs(freq - approx_freq) <= 0.1
                     freq_result_char = '✅' if is_freq_good else '❌'
-                    print(f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: ~ {approx_freq:>7.2f} Hz {freq_result_char}')
+                    print(
+                        f'  {mode:<5}: {msg:>3} {msg_full_unit}, {freq:>4} Hz: '
+                        f'~ {approx_freq:>7.2f} Hz {freq_result_char}'
+                    )
+                data_freq[freq] = {
+                    'min': latency_min,
+                    'mean': latency_mean,
+                    'max': latency_max,
+                    'stdev': latency_stdev,
+                }
             else:
                 latency_mean = get_latency_data(run_file)
 
@@ -241,7 +250,7 @@ def plot_mode(
             ax.plot(msg_freqs, msg_latencies, 'D-', label=label)
 
     xticks = get_frequency_ticks()
-    ax.set(xticks=xticks, xlim=(min(xticks), max(xticks)+75))
+    ax.set(xticks=xticks, xlim=(min(xticks), max(xticks) + 75))
     ax.grid()
 
 
@@ -252,7 +261,7 @@ def plot_modes(
     figure_filename: str = '6_results_latencies',
     legend_fontsize: int = 12,
     legend_loc: str = 'center',
-    legend_bbox_to_anchor = (0.725, 0.675),  # Configured manually
+    legend_bbox_to_anchor: Tuple[float, float] = (0.725, 0.675),  # Configured manually
 ) -> None:
     """
     Plot baseline and tracing latency results separately.
@@ -317,7 +326,7 @@ def plot_diff_mode(
         msg_full_unit = get_full_message_size_unit(msg_unit)
         msg_freqs = []
         msg_latency_diff = []
-        # msg_latency_diff_stdev = []
+        msg_latency_diff_stdev = []
         msg_latency_diff_percent = []
         for freq in freqs:
             # print(f'{msg} {msg_full_unit}, {freq} Hz')
@@ -339,8 +348,8 @@ def plot_diff_mode(
                     print('base size:', raw_latencies_base.size)
                     print('trace size:', raw_latencies_trace.size)
                     latency_diff_stdev = math.sqrt(
-                        (math.pow(latency_stdev_base, 2) / float(raw_latencies_base.size)) +
-                        (math.pow(latency_stdev_trace, 2) / float(raw_latencies_trace.size))
+                        (math.pow(latency_stdev_base, 2) / float(raw_latencies_base.size))
+                        + (math.pow(latency_stdev_trace, 2) / float(raw_latencies_trace.size))
                     )
                     print('base stdev:', latency_stdev_base)
                     print('trace stdev:', latency_stdev_trace)
@@ -378,7 +387,7 @@ def plot_diff_mode(
     ax2.set_ylim(bottom=0)
     xticks = get_frequency_ticks()
     for axis in (ax, ax2):
-        axis.set(xticks=xticks, xlim=(min(xticks), max(xticks)+75))
+        axis.set(xticks=xticks, xlim=(min(xticks), max(xticks) + 75))
     ax.grid()
     ax2.grid()
     if same_plot:
