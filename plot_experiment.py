@@ -31,6 +31,8 @@ from apex_performance_plotter.load_logfiles import load_logfile
 # matplotlib>=3.4 is required for suptitle() and supxlabel()
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 import pandas as pd
 
 
@@ -196,6 +198,11 @@ def get_full_message_size_unit(simple_unit: str) -> str:
         'k': 'KiB',
         'm': 'MiB',
     }[simple_unit]
+
+
+def get_default_colors() -> List[str]:
+    """Get the list of default matplotlib colours."""
+    return [p['color'] for p in plt.rcParams['axes.prop_cycle']]
 
 
 def plot_mode(
@@ -518,6 +525,91 @@ def plot_diff_mode(
         fig2.savefig(f'{filename}_per.pdf')
 
 
+def plot_aggregate(
+    title: str = 'Agregate latencies without (left) and with tracing (right)',
+    ylabel: str = 'latency overhead (ms)',
+    figure_filename: str = '6_results_aggregate_overhead',
+) -> None:
+    """
+    Plot aggregate overhead values for base and for tracing.
+
+    :param title: plot title
+    :param ylabel: y axis label
+    :param figure_filename: base file name for the figure (without file extension)
+    """
+    if not has_raw_latency_data:
+        print('Cannot plot aggregate data')
+        return
+
+    fig, ax = plt.subplots(1, 1, constrained_layout=True)
+
+    diffs_base = []
+    diffs_trace = []
+    for msg, msg_unit in msgs:
+        for freq in freqs:
+            run_file_base = get_run_file('base', msg, msg_unit, freq)
+            run_file_trace = get_run_file('trace', msg, msg_unit, freq)
+            latency_mean_base, _, _, _, raw_latencies_base = get_latency_data_raw(run_file_base)
+            _, _, _, _, raw_latencies_trace = get_latency_data_raw(run_file_trace)
+            # For this (msg size, freq) tuple, subtract mean base
+            # latency from both base & trace raw latency values
+            offset = latency_mean_base
+            diffs_base.extend(raw_latencies_base - offset)
+            diffs_trace.extend(raw_latencies_trace - offset)
+
+    diffs_base = np.array(diffs_base)
+    diffs_trace = np.array(diffs_trace)
+    base_mean = diffs_base.mean()
+    base_stdev = diffs_base.std()
+    base_median = np.median(diffs_base)
+    base_q = np.percentile(diffs_base, [25, 75])
+    trace_mean = diffs_trace.mean()
+    trace_stdev = diffs_trace.std()
+    trace_median = np.median(diffs_trace)
+    trace_q = np.percentile(diffs_trace, [25, 75])
+    def format_num(num: float) -> str:
+        return f'{" " if num >= 0.0 else ""}{num:>2.10f}'
+    print('Aggregate latency overhead')
+    print('  base')
+    print(f'    mean   = {format_num(base_mean)} ms')
+    print(f'    stdev  = {format_num(base_stdev)} ms')
+    print(f'    median = {format_num(base_median)} ms')
+    print(f'    Q1     = {format_num(base_q[0])} ms')
+    print(f'    Q3     = {format_num(base_q[1])} ms')
+    print('  trace')
+    print(f'    mean   = {format_num(trace_mean)} ms')
+    print(f'    stdev  = {format_num(trace_stdev)} ms')
+    print(f'    median = {format_num(trace_median)} ms')
+    print(f'    Q1     = {format_num(trace_q[0])} ms')
+    print(f'    Q3     = {format_num(trace_q[1])} ms')
+
+    colours = get_default_colors()
+    boxcolourprop = {'color': colours[0]}
+    medianprops = {'color': colours[1]}
+    ax.boxplot(
+        diffs_base, positions=[1],
+        showfliers=False,
+        medianprops=medianprops, boxprops=boxcolourprop, whiskerprops=boxcolourprop, capprops=boxcolourprop,
+    )
+    ax.boxplot(
+        diffs_trace, positions=[2],
+        showfliers=False,
+        medianprops=medianprops, boxprops=boxcolourprop, whiskerprops=boxcolourprop, capprops=boxcolourprop,
+    )
+
+    if include_plot_title:
+        ax.set(title=title)
+
+    ax.grid()
+    ax.set_xticklabels(['base', 'trace'])
+    ax.set(ylabel=ylabel)
+
+    filename = f'./{experiment_dir}/{figure_filename}'
+    fig.savefig(f'{filename}.png')
+    fig.savefig(f'{filename}.svg')
+    fig.savefig(f'{filename}.pdf')
+
+
 def main(argv=sys.argv[1:]) -> int:
     """Plot experiment results for given experiment."""
     if len(argv) != 1:
@@ -540,6 +632,7 @@ def main(argv=sys.argv[1:]) -> int:
 
     plot_modes()
     plot_diff_mode()
+    plot_aggregate()
     plt.show()
 
     return 0
