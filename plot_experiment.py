@@ -584,8 +584,8 @@ def plot_aggregate(
     print(f'    Q3     = {format_num(trace_q[1])} ms')
 
     colours = get_default_colors()
-    boxcolourprop = {'color': colours[0]}
-    medianprops = {'color': colours[1]}
+    boxcolourprop = {'color': colours[0], 'linewidth': 1.5}
+    medianprops = {'color': colours[1], 'linewidth': 1.5}
     ax.boxplot(
         diffs_base, positions=[1],
         showfliers=False,
