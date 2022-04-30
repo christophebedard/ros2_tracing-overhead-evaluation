@@ -297,7 +297,7 @@ def export_table(
     f = open(filename, 'w')
 
     before = textwrap.dedent(r"""
-        \begin{table}[htb]
+        \begin{table}[htb!]
         \begin{center}
         \caption{$caption}
         \begin{tabular}{ccccccc}
