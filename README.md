@@ -4,17 +4,19 @@
 
 This is part of the [`ros2_tracing` paper](https://arxiv.org/abs/2201.00393).
 If you use or refer to `ros2_tracing` or this repository, please cite:
-<!-- TODO replace with early access/published version when available -->
-* C. Bédard, I. Lütkebohle, and M. Dagenais, "ros2_tracing: Multipurpose Low-Overhead Framework for Real-Time Tracing of ROS 2," *arXiv preprint arXiv:2201.00393*, 2022.
+* C. Bédard, I. Lütkebohle, and M. Dagenais, "ros2_tracing: Multipurpose Low-Overhead Framework for Real-Time Tracing of ROS 2," *IEEE Robotics and Automation Letters*, vol. 7, no. 3, pp. 6511–6518, 2022.
 
 BibTeX:
-
 ```bibtex
 @article{bedard2022ros2tracing,
   title={ros2\_tracing: Multipurpose Low-Overhead Framework for Real-Time Tracing of ROS 2},
   author={B{\'e}dard, Christophe and L{\"u}tkebohle, Ingo and Dagenais, Michel},
-  journal={arXiv preprint arXiv:2201.00393},
-  year={2022}
+  journal={IEEE Robotics and Automation Letters},
+  year={2022},
+  volume={7},
+  number={3},
+  pages={6511--6518},
+  doi={10.1109/LRA.2022.3174346}
 }
 ```
 
